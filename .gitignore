@@ -1,1 +1,7 @@
-nextlogenv/*
+nextlogenv/
+__pycache__/
+dist/
+*.egg-info/
+*.egg
+build/
+*.txt
