@@ -1,11 +1,11 @@
 import logging
-#import requests
+import requests
 import threading
 import redis
 import time
+import json
 import datetime
 
-from .api_call import api_call_loki
 
 dlogger = logging.Logger
 
@@ -28,10 +28,41 @@ class NextLog:
                 try:
                     #Process the log entry
                     #Send the log entry to loki as a payload of the post request.
-                    res = api_call_loki(log_entry,self.loki_url)
+                    response = self.api_call_loki(log_entry)
                 except requests.exceptions.RequestException as e:
                     dlogger.error(e)
                     break
+
+    def api_call_loki(self, redis_log_entry):
+
+        log_entry = redis_log_entry[1].decode("utf-8").replace("'", '"')
+        log_entry_json = json.loads(log_entry)
+
+        payload = {
+            'streams': [
+                {
+                    'labels': '{source=\"localhost\"}',
+                    'entries': [
+                        {
+                            'ts' : log_entry_json['timestamp'],
+                            'line': f"[{log_entry_json['level']}] {log_entry_json['line']}"
+                        }
+                    ]            
+                }
+
+            ]
+        }
+
+        headers = {
+            'Content-type': 'application/json'
+        }
+
+        payload = json.dumps(payload)
+        
+        response = requests.post(self.loki_url,data=payload,headers=headers)
+        return response
+
+
 
     def info(self,log_msg):
         self.redis_server.lpush('log_queue',str({"level":'info',"timestamp": str(datetime.datetime.utcnow()),'line':log_msg}))
@@ -51,7 +82,7 @@ class NextLog:
 
 
 if __name__ == "__main__":
-    loki_url = "http://localhost:3100/api/prom/push"
+    loki_url = "http://localhost:3100/loki/api/v1/push"
     logger = NextLog(loki_url=loki_url)
     
     logger.info("This is an infoo log!!")
