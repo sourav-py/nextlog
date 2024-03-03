@@ -5,11 +5,13 @@ import redis
 import time
 import datetime
 
+from .api_call import api_call_loki
+
 dlogger = logging.Logger
 
 
 class NextLog:
-    def __init__(self,logger_name = __name__, log_level = logging.DEBUG, loki_url = None):
+    def __init__(self,logger_name = __name__, log_level = logging.INFO, loki_url = None):
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(log_level)
         self.loki_url = loki_url
@@ -26,21 +28,21 @@ class NextLog:
                 try:
                     #Process the log entry
                     #Send the log entry to loki as a payload of the post request.
-                    pass
+                    res = api_call_loki(log_entry,self.loki_url)
                 except requests.exceptions.RequestException as e:
                     dlogger.error(e)
                     break
 
     def info(self,log_msg):
-        self.redis_server.lpush('log_queue',str({'level':'info','timestamp': datetime.datetime.utcnow(),'line':log_msg}))
+        self.redis_server.lpush('log_queue',str({"level":'info',"timestamp": str(datetime.datetime.utcnow()),'line':log_msg}))
         self.logger.info(log_msg)
     
     def debug(self,log_msg):
-        self.redis_server.lpush('log_queue',str({'level':'debug','timestamp': datetime.datetime.utcnow(),'line':log_msg}))
+        self.redis_server.lpush('log_queue',str({"level":'debug',"timestamp": str(datetime.datetime.utcnow()),'line':log_msg}))
         self.logger.debug(log_msg)
     
     def error(self,log_msg):
-        self.redis_server.lpush('log_queue',str({'level':'error','timestamp': datetime.datetime.utcnow(),'line':log_msg}))
+        self.redis_server.lpush('log_queue',str({"level":'error',"timestamp": str(datetime.datetime.utcnow()),'line':log_msg}))
         self.logger.error(log_msg)
 
     def stop(self):
@@ -51,13 +53,13 @@ class NextLog:
 if __name__ == "__main__":
     loki_url = "http://localhost:3100/api/prom/push"
     logger = NextLog(loki_url=loki_url)
-    """
-    logger.info("This is an info log!!")
+    
+    logger.info("This is an infoo log!!")
 
-    logger.debug("This is a debug log!!")
+    logger.debug("This is a debugg log!!")
 
-    logger.error("This is an error log!!")
-    """
+    logger.error("This is an errorr log!!")
+    
 
 
 
