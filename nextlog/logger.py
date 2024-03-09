@@ -10,10 +10,17 @@ import datetime
 dlogger = logging.Logger
 
 
-class NextLog:
-    def __init__(self,logger_name = __name__, log_level = logging.INFO, loki_url = None):
-        self.logger = logging.getLogger(logger_name)
-        self.logger.setLevel(log_level)
+class Logger:
+    def __init__(self,name = __name__, level = logging.DEBUG,labels = {}, formatter = None, handler = None, loki_url = None):
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(level)
+
+        if formatter:
+            self.logger.setFormatter(formatter)
+        
+        if handler:
+            self.logger.addHandler(handler)
+
         self.loki_url = loki_url
         self.redis_server = redis.Redis(host='localhost',port=6379,db=0)
         self.running = True
@@ -24,25 +31,25 @@ class NextLog:
         while self.running:
             time.sleep(1) 
             if self.loki_url:
-                log_entry = self.redis_server.brpop('log_queue')
-                try:
-                    #Process the log entry
-                    #Send the log entry to loki as a payload of the post request.
-                    response = self.api_call_loki(log_entry)
-                    print(response)
-                except requests.exceptions.RequestException as e:
-                    dlogger.error(e)
-                    break
+                log_entry = self.redis_server.lindex('log_queue',1)
+                if log_entry:
+                    try:
+                        response = self.api_call_loki(log_entry)
+                        self.redis_server.lpop('log_queue')
+                    except requests.exceptions.RequestException as e:
+                        break
+                else:
+                    print("No log entry")
 
     def api_call_loki(self, redis_log_entry):
 
-        log_entry = redis_log_entry[1].decode("utf-8").replace("'", '"')
+        log_entry = redis_log_entry.decode("utf-8").replace("'", '"')
         log_entry_json = json.loads(log_entry)
 
         payload = {
             "streams": [
                 {
-                    "labels": "{source=\"localhost\"}",
+                    "labels": "{source=\"localhost3\"}",
                     "entries": [
                         {
                             "ts" : log_entry_json['timestamp'],
@@ -67,21 +74,21 @@ class NextLog:
 
 
     def info(self,log_msg):
-        self.push_to_redis(log_msg,log_level)
+        self.push_to_redis(log_msg,"INFO")
         self.logger.info(log_msg)
     
     def debug(self,log_msg):
-        self.push_to_redis(log_msg,log_level)
+        self.push_to_redis(log_msg,"DEBUG")
         self.logger.debug(log_msg)
     
     def error(self,log_msg):
-        self.push_to_redis(log_msg,log_level)
+        self.push_to_redis(log_msg,"ERROR")
         self.logger.error(log_msg)
     
     def push_to_redis(self,log_msg,log_level):
         timestamp = datetime.datetime.utcnow()
         timestampstr = timestamp.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        self.redis_server.lpush('log_queue',str({"level":log_level,"timestamp": timestampstr,'line':log_msg}))
+        self.redis_server.rpush('log_queue',str({"level":log_level,"timestamp": timestampstr,'line':log_msg}))
 
     def stop(self):
         self.running = False
@@ -89,8 +96,15 @@ class NextLog:
 
 
 if __name__ == "__main__":
+
     loki_url = "http://localhost:3100/api/prom/push"
-    logger = NextLog(loki_url=loki_url)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler = logging.FileHandler('cosole.log')
+    file_handler.setFormatter(formatter)
+
+    logger = Logger(name="main_logger",loki_url=loki_url,level=logging.DEBUG,handler=file_handler)
+    
     
     logger.info("This is an infoo log!!")
 
