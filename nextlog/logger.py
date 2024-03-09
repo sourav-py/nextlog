@@ -22,13 +22,14 @@ class NextLog:
 
     def send_logs(self):
         while self.running:
-            time.sleep(1)  # Adjust sleep time as needed
+            time.sleep(1) 
             if self.loki_url:
                 log_entry = self.redis_server.brpop('log_queue')
                 try:
                     #Process the log entry
                     #Send the log entry to loki as a payload of the post request.
                     response = self.api_call_loki(log_entry)
+                    print(response)
                 except requests.exceptions.RequestException as e:
                     dlogger.error(e)
                     break
@@ -39,13 +40,13 @@ class NextLog:
         log_entry_json = json.loads(log_entry)
 
         payload = {
-            'streams': [
+            "streams": [
                 {
-                    'labels': '{source=\"localhost\"}',
-                    'entries': [
+                    "labels": "{source=\"localhost\"}",
+                    "entries": [
                         {
-                            'ts' : log_entry_json['timestamp'],
-                            'line': f"[{log_entry_json['level']}] {log_entry_json['line']}"
+                            "ts" : log_entry_json['timestamp'],
+                            "line": f"[{log_entry_json['level']}] {log_entry_json['line']}"
                         }
                     ]            
                 }
@@ -58,6 +59,7 @@ class NextLog:
         }
 
         payload = json.dumps(payload)
+        print(payload)
         
         response = requests.post(self.loki_url,data=payload,headers=headers)
         return response
@@ -65,16 +67,21 @@ class NextLog:
 
 
     def info(self,log_msg):
-        self.redis_server.lpush('log_queue',str({"level":'info',"timestamp": str(datetime.datetime.utcnow()),'line':log_msg}))
+        self.push_to_redis(log_msg,log_level)
         self.logger.info(log_msg)
     
     def debug(self,log_msg):
-        self.redis_server.lpush('log_queue',str({"level":'debug',"timestamp": str(datetime.datetime.utcnow()),'line':log_msg}))
+        self.push_to_redis(log_msg,log_level)
         self.logger.debug(log_msg)
     
     def error(self,log_msg):
-        self.redis_server.lpush('log_queue',str({"level":'error',"timestamp": str(datetime.datetime.utcnow()),'line':log_msg}))
+        self.push_to_redis(log_msg,log_level)
         self.logger.error(log_msg)
+    
+    def push_to_redis(self,log_msg,log_level):
+        timestamp = datetime.datetime.utcnow()
+        timestampstr = timestamp.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        self.redis_server.lpush('log_queue',str({"level":log_level,"timestamp": timestampstr,'line':log_msg}))
 
     def stop(self):
         self.running = False
@@ -82,7 +89,7 @@ class NextLog:
 
 
 if __name__ == "__main__":
-    loki_url = "http://localhost:3100/loki/api/v1/push"
+    loki_url = "http://localhost:3100/api/prom/push"
     logger = NextLog(loki_url=loki_url)
     
     logger.info("This is an infoo log!!")
