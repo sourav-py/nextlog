@@ -5,7 +5,7 @@ long_description = 'Documentation coming soon.'
 
 setup(
     name='nextlog',
-    version='0.0.0',
+    version='0.0.1',
     description=description,
     long_description=long_description,
     author='Sourav',
@@ -13,5 +13,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         # list of dependencies
+        'requests',
+        'redis'
     ],
 )

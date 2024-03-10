@@ -1,4 +1,5 @@
 nextlogenv/
+testenv/
 __pycache__/
 dist/
 *.egg-info/

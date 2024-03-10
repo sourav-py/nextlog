@@ -7,9 +7,6 @@ import json
 import datetime
 
 
-dlogger = logging.Logger
-
-
 class Logger:
     def __init__(self,name = __name__, level = logging.DEBUG,labels = {}, formatter = None, handler = None, loki_url = None):
         self.logger = logging.getLogger(name)
@@ -73,45 +70,34 @@ class Logger:
 
 
 
-    def info(self,log_msg):
-        self.push_to_redis(log_msg,"INFO")
-        self.logger.info(log_msg)
+    def info(self,msg):
+        self.push_to_redis(msg,"INFO")
+        self.logger.info(msg)
     
-    def debug(self,log_msg):
-        self.push_to_redis(log_msg,"DEBUG")
-        self.logger.debug(log_msg)
+    def debug(self,msg):
+        self.push_to_redis(msg,"DEBUG")
+        self.logger.debug(msg)
     
-    def error(self,log_msg):
-        self.push_to_redis(log_msg,"ERROR")
-        self.logger.error(log_msg)
+    def warning(self,msg):
+        self.push_to_redis(msg,"WARNING")
+        self.logger.warning(msg)
     
-    def push_to_redis(self,log_msg,log_level):
+    def error(self,msg):
+        self.push_to_redis(msg,"ERROR")
+        self.logger.error(msg)
+   
+    def critical(self,msg):
+        self.push_to_redis(msg,"CRITICAL")
+        self.logger.critical(msg)
+    
+    def push_to_redis(self,msg,log_level):
         timestamp = datetime.datetime.utcnow()
         timestampstr = timestamp.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        self.redis_server.rpush('log_queue',str({"level":log_level,"timestamp": timestampstr,'line':log_msg}))
+        self.redis_server.rpush('log_queue',str({"level":log_level,"timestamp": timestampstr,'line':msg}))
 
     def stop(self):
         self.running = False
         self.send_logs_thread.join()
-
-
-if __name__ == "__main__":
-
-    loki_url = "http://localhost:3100/api/prom/push"
-
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler = logging.FileHandler('cosole.log')
-    file_handler.setFormatter(formatter)
-
-    logger = Logger(name="main_logger",loki_url=loki_url,level=logging.DEBUG,handler=file_handler)
-    
-    
-    logger.info("This is an infoo log!!")
-
-    logger.debug("This is a debugg log!!")
-
-    logger.error("This is an errorr log!!")
-    
 
 
 
