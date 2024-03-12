@@ -5,9 +5,9 @@ Whenever the logger statement - `logger.info()` / `logger.debug()` / `logger.err
 A process running on separate thread will keep dispatching those logs to the specified loki endpoint.
 
 ## Features
-- Seamless Integration: nextlog builds upon the Python logging library, so its usage is similar and familiar.
-- Async Dispatch: Logs are asynchronously dispatched to monitoring services like Loki, ensuring minimal impact on the main code flow.
-- Redis Backup: Utilizes Redis to temporarily store logs in case the monitoring service (e.g., Loki) is unavailable.
+- **Seamless Integration**: nextlog builds upon the Python logging library, so its usage is similar and familiar.
+- **Async Dispatch**: Logs are asynchronously dispatched to monitoring services like Loki, ensuring minimal impact on the main code flow.
+- **Redis Backup**: Utilizes Redis to temporarily store logs in case the monitoring service (e.g., Loki) is unavailable.
 
 ## Setup
 ### Install the library 
