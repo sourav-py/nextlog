@@ -5,7 +5,7 @@ long_description = 'Documentation coming soon.'
 
 setup(
     name='nextlog',
-    version='0.0.1',
+    version='0.0.2',
     description=description,
     long_description=long_description,
     author='Sourav',

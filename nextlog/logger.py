@@ -19,6 +19,7 @@ class Logger:
             self.logger.addHandler(handler)
 
         self.loki_url = loki_url
+        self.labels = labels
         self.redis_server = redis.Redis(host='localhost',port=6379,db=0)
         self.running = True
         self.send_logs_thread = threading.Thread(target=self.send_logs)
@@ -36,7 +37,7 @@ class Logger:
                     except requests.exceptions.RequestException as e:
                         break
                 else:
-                    print("No log entry")
+                    pass
 
     def api_call_loki(self, redis_log_entry):
 
@@ -46,7 +47,7 @@ class Logger:
         payload = {
             "streams": [
                 {
-                    "labels": "{source=\"localhost3\"}",
+                    "labels": self.get_labels_string(self.labels),
                     "entries": [
                         {
                             "ts" : log_entry_json['timestamp'],
@@ -63,10 +64,18 @@ class Logger:
         }
 
         payload = json.dumps(payload)
-        print(payload)
         
         response = requests.post(self.loki_url,data=payload,headers=headers)
         return response
+    
+    def get_labels_string(self,labels_map):
+        labels_string = "{"
+        for key, value in labels_map.items():
+            labels_string += f"{key}=\"{value}\", "
+        # Remove the trailing comma and space
+        labels_string = labels_string.rstrip(", ")
+        labels_string += "}"
+        return labels_string
 
 
 
@@ -98,6 +107,7 @@ class Logger:
     def stop(self):
         self.running = False
         self.send_logs_thread.join()
+
 
 
 
