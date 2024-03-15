@@ -28,12 +28,19 @@ labels = {'source': 'localhost'}
 loki_url = "http://localhost:3100/api/prom/push"
 
 # Initialize nextlog logger
-logger = Logger(name="my_logger", level=logging.DEBUG, loki_url=loki_url, labels=labels)
+logger = Logger(__name__,loki_url=loki_url,labels=labels)
+
+# Apply preferred logging configs
+logger.setLevel(logging.ERROR)
+file_handler = logging.FileHandler('console2.log')
+logger.addHandler(file_handler)
 
 # Log messages
-logger.debug("DEBUG log test 0")
-logger.warning("WARNING log test 0")
-logger.error("ERROR log test 0")
-logger.critical("CRITICAL log test 0")
+logger.error("Error log 1")
+logger.error("Error log 2")
+logger.critical("Critical log 1")
+logger.critical("Critical log 2")
+logger.error("Error log 3")
+
 
 ```
