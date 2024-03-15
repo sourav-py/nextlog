@@ -7,19 +7,12 @@ import json
 import datetime
 
 
-class Logger:
-    def __init__(self,name = __name__, level = logging.DEBUG,labels = {}, formatter = None, handler = None, loki_url = None):
-        self.logger = logging.getLogger(name)
-        self.logger.setLevel(level)
+class Logger(logging.Logger):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args)
 
-        if formatter:
-            self.logger.setFormatter(formatter)
-        
-        if handler:
-            self.logger.addHandler(handler)
-
-        self.loki_url = loki_url
-        self.labels = labels
+        self.loki_url = kwargs.get('loki_url',None)
+        self.labels = kwargs.get('labels',{})
         self.redis_server = redis.Redis(host='localhost',port=6379,db=0)
         self.running = True
         self.send_logs_thread = threading.Thread(target=self.send_logs)
@@ -81,23 +74,23 @@ class Logger:
 
     def info(self,msg):
         self.push_to_redis(msg,"INFO")
-        self.logger.info(msg)
+        super().info(msg)
     
     def debug(self,msg):
         self.push_to_redis(msg,"DEBUG")
-        self.logger.debug(msg)
+        super().debug(msg)
     
     def warning(self,msg):
         self.push_to_redis(msg,"WARNING")
-        self.logger.warning(msg)
+        super().warning(msg)
     
     def error(self,msg):
         self.push_to_redis(msg,"ERROR")
-        self.logger.error(msg)
+        super().error(msg)
    
     def critical(self,msg):
         self.push_to_redis(msg,"CRITICAL")
-        self.logger.critical(msg)
+        super().critical(msg)
     
     def push_to_redis(self,msg,log_level):
         timestamp = datetime.datetime.utcnow()
@@ -107,7 +100,3 @@ class Logger:
     def stop(self):
         self.running = False
         self.send_logs_thread.join()
-
-
-
-
