@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 from pathlib import Path
 
-description = 'Project in development phase.'
+description = 'A logging library with asynchronous logs dispatch to Loki.'
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='nextlog',
-    version='1.0.3',
+    version='1.1.1',
     description=description,
     long_description=long_description,
     long_description_content_type='text/markdown',
