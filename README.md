@@ -1,4 +1,4 @@
-# nextlog
+# [nextlog](https://pypi.org/project/nextlog/)
 This is a `python` logging library which asynchronously dispatches logs to monitoring services like loki.
 It uses the OOTB python logging library as its base.<br>
 Whenever the logger statement - `logger.info()` / `logger.debug()` / `logger.error()` etc. gets executed, the log is pushed onto a `redis` queue.<br>
