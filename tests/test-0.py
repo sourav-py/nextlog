@@ -17,3 +17,4 @@ logger.error("Error log 2")
 logger.critical("Critical log 1")
 logger.critical("Critical log 2")
 logger.error("Error log 3")
+logger.stop() #Stop the logger and finish sending logs

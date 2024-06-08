@@ -14,12 +14,15 @@ class Logger(logging.Logger):
         self.loki_url = kwargs.get('loki_url',None)
         self.labels = kwargs.get('labels',{})
         self.redis_server = redis.Redis(host='localhost',port=6379,db=0)
-        self.running = True
+        # Replace the running flag with threading.Event
+        self.stop_event = threading.Event()
+        
+        # Initialize and start the send_logs_thread
         self.send_logs_thread = threading.Thread(target=self.send_logs)
         self.send_logs_thread.start()
 
     def send_logs(self):
-        while self.running:
+        while not self.stop_event.is_set():
             time.sleep(1) 
             if self.loki_url:
                 log_entry = self.redis_server.lindex('log_queue',1)
@@ -28,6 +31,7 @@ class Logger(logging.Logger):
                         response = self.api_call_loki(log_entry)
                         self.redis_server.lpop('log_queue')
                     except requests.exceptions.RequestException as e:
+                        self.error(f"Failed to send logs: {e}") # Send error log to logger
                         break
                 else:
                     pass
@@ -98,5 +102,7 @@ class Logger(logging.Logger):
         self.redis_server.rpush('log_queue',str({"level":log_level,"timestamp": timestampstr,'line':msg}))
 
     def stop(self):
-        self.running = False
-        self.send_logs_thread.join()
+        self.stop_event.set()  # Signal the thread to stop
+        self.info("Logger: Waiting for logs to finish sending...")
+        self.send_logs_thread.join()  # Wait for the thread to finish
+        time.sleep(5) # Wait for 5 seconds because for some reason some logs take a few seconds
