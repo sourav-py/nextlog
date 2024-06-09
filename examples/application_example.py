@@ -37,9 +37,29 @@ def caller_info():
 def main_exit():
     """
     Example Exit function to simulate an application that imports Nextlog
+    
+    Example when logs successfully sent:
+    
+        Main Program: Exit called by:
+        {'file': '/examples/application_example.py', 
+        'line': 148, 
+        'function': '<module>', 
+        'code_context': ['main_exit()   # Stop the logger and finish sending logs\n'], 
+        'index': 0}
+        
+    Example when logs have error:
+    
+        Main Program: Exit called by:
+        {'file': 'nextlog/logger.py', 
+        'line': 83, 
+        'function': 'handle_error', 
+        'code_context': ['self.exit_callback()  # Call the callback to signal an exit\n'], 
+        'index': 0}
+    
     """    
-    info = caller_info()
+    info = caller_info() # Just for demo to show if application exits itself or if Nextlog exits due to error.
     logger.info(f"Main Program: Exit called by:\n\n {info}\n\n")    # Demonstrate what called main exit
+    logger.stop()
     sys.exit(1)  # Exit the entire program
 
 
@@ -114,7 +134,7 @@ def setup_logger():
         'redis_port': 6379,
         'detailed_logging': False,
         'exit_callback': main_exit,
-        'labels': {'source': 'localhost-x2'}
+        'labels': {'source': 'localhost-testing'}
     }
     
     # Create Logger from Dictionary
@@ -144,4 +164,4 @@ logger.error("Main Program: Error log 3")
 logger.error("Main Program: Error log 4")
 logger.error("Main Program: Error log 5")
 time.sleep(5)   # Simulate work
-logger.stop()   # Stop the logger and finish sending logs
+main_exit()   # Stop the logger and finish sending logs
