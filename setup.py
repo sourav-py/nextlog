@@ -8,7 +8,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='nextlog',
-    version='1.1.1',
+    version='2.0.1',
     description=description,
     long_description=long_description,
     long_description_content_type='text/markdown',

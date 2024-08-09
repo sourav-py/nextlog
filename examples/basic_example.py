@@ -6,7 +6,7 @@ redis_host='localhost' # Default is localhost
 redis_port=6379  # Default port is 6379
 
 labels = {
-    'source' : 'localhost-x2'
+    'source' : 'localhost-x11'
 }
 
 logger = Logger(__name__,loki_url=loki_url,labels=labels)
@@ -22,4 +22,18 @@ logger.error("Error log 2")
 logger.critical("Critical log 1")
 logger.critical("Critical log 2")
 logger.error("Error log 3")
+logger.error("Error log 4")
+logger.error("Error log 5")
+logger.error("Error log 6")
+logger.error("Error log 7")
+logger.error("Error log 8")
+logger.error("Error log 9")
+
 logger.stop() #Stop the logger and finish sending logs
+
+"""
+    In order to terminate the whole logging process immediately,
+    utilize the following function:
+
+    logger.hard_stop()
+"""

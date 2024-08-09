@@ -29,7 +29,8 @@ class Logger(logging.Logger):
         self.exit_callback = kwargs.get('exit_callback', None)
         self.redis_server = redis.Redis(host=redis_host, port=redis_port, db=0)
         self.detailed_logging = kwargs.get('detailed_logging', False)
-        self.stop_event = threading.Event()
+        self.soft_stop_event = threading.Event()
+        self.hard_stop_event = threading.Event()
         self.send_logs_thread = threading.Thread(target=self.send_logs)
         self.error_counter = 0
         self.max_errors = 5
@@ -40,11 +41,11 @@ class Logger(logging.Logger):
         Continuously monitors and sends logs from the Redis queue to Loki until stopped.
         """
         try:
-            while not self.stop_event.is_set():
+            while not self.hard_stop_event.is_set() and (not self.soft_stop_event.is_set() or self.redis_server.llen('log_queue')):
                 log_entry = self.redis_server.blpop('log_queue', 5)
                 if log_entry and self.loki_url:
                     self.process_log_entry(log_entry)
-                if self.stop_event.is_set():
+                if self.hard_stop_event.is_set():
                     break  # Ensure immediate termination if the event is set
         except Exception as e:
             self.error("Fatal error in send_logs: {}".format(str(e)))
@@ -168,10 +169,25 @@ class Logger(logging.Logger):
 
     def stop(self):
         """
-        Stops the logging process and ensures all threads are cleanly shutdown.
+        Waits for the the logging process to complete and ensures all threads are cleanly shutdown.
         """
-        self.stop_event.set()
+        self.soft_stop_event.set()
+        if threading.current_thread() != self.send_logs_thread:
+            self.info("Nextlog: Waiting for logging thread to terminate.")
+            self.send_logs_thread.join()
+        self.info("Nextlog: All logs have been sent and the logger is stopping.")
+
+    def hard_stop(self):
+        """
+        Stops the logging process immediately and ensures all threads are cleanly shutdown
+        """
+
+        self.hard_stop_event.set()
         if threading.current_thread() != self.send_logs_thread:
             self.info("Nextlog: Stopping logging thread.")
             self.send_logs_thread.join()
-        self.info("Nextlog: All logs have been sent and the logger is stopping.")
+        self.info("Nextlog: The logger is stopping.")
+
+
+
+        
